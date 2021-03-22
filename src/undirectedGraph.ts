@@ -19,13 +19,15 @@ export default class UndirectedGraph {
     addVertex(val: string | Vertex): void {
         if (this.finalized) throw new Error("Cannot add vertex to a finalized graph.")
         if (typeof val === "string") {
-            this.saveVertex(new Vertex(val, this.vertices.length))
+            this.saveVertex(new Vertex(this, val, this.vertices.length))
         } else if (typeof val === "object") {
             this.saveVertex(val)
         }
         throw new TypeError("No mathing overload for vertex creation.");
     }
     private saveEdge(e: Edge): void {
+        e.a.neighbours.push(e.b);
+        e.b.neighbours.push(e.a);
         this.edges.push(e);
     }
 
@@ -40,14 +42,14 @@ export default class UndirectedGraph {
             const v1 = this.getVertex(val1);
             const v2 = this.getVertex(val2);
             if (!v1 || !v2) throw new ReferenceError("Cannot create an edge from vertex that doesn't exist. Please check you have added the vertex before adding the edge.");
-            const e = new Edge(v1, v2, val3);
+            const e = new Edge(this, v1, v2, val3);
             this.saveEdge(e);
         } else if (!val2 && !val3 && typeof val1 === "object") {
             if (val1 instanceof Vertex) throw new TypeError("Cannot add a Vertex as an Edge.");
             this.saveEdge(val1);
         } else if (typeof val1 == "object" && typeof val2 === "object") {
             if (val1 instanceof Edge) throw new TypeError("Cannot create Edge from an Edge.");
-            const e = new Edge(val1, val2, val3);
+            const e = new Edge(this, val1, val2, val3);
             this.saveEdge(e);
         }
         throw new TypeError("No mathing overload for edge creation.");
@@ -73,25 +75,165 @@ export default class UndirectedGraph {
         this.finalized = false;
         this.cache = {};
     }
+    get neighbourList(): Array<Array<number>> {
+        if (this.cache["neighbourList"]) return this.cache["neighbourList"];
+        const list: Array<Array<number>> = [];
+        for (const v of this.vertices) {
+            list[v.id] = [];
+        }
+        for (const e of this.edges) {
+            list[e.a.id].push(e.b.id);
+            list[e.b.id].push(e.a.id);
+        }
+        if (this.finalized) this.cache["neighbourList"] = list;
+        return list;
+    }
+    get neighbourListDistances(): Array<Array<{ id: number, cost: number }>> {
+        if (this.cache["neighbourListDistances"]) return this.cache["neighbourListDistances"];
+        const list: Array<Array<{ id: number, cost: number }>> = [];
+        for (const v of this.vertices) {
+            list[v.id] = [];
+        }
+        for (const e of this.edges) {
+            list[e.a.id].push({ id: e.b.id, cost: e.cost });
+            list[e.b.id].push({ id: e.a.id, cost: e.cost });
+        }
+        if (this.finalized) this.cache["neighbourListDistances"] = list;
+        return list;
+    }
+    get distanceMatrix(): Array<Array<number>> {
+        if (this.cache["distanceMatrix"]) return this.cache["distanceMatrix"];
+        const matrix: Array<Array<number>> = [];
+        for (const v of this.vertices) {
+            matrix[v.id] = [];
+        }
+        for (const e of this.edges) {
+            matrix[e.a.id][e.b.id] = e.cost;
+            matrix[e.b.id][e.a.id] = e.cost;
+        }
+        if (this.finalized) this.cache["distanceMatrix"] = matrix;
+        return matrix;
+    }
+    get neighbourMatrix(): Array<Array<boolean>> {
+        if (this.cache["neighbourMatrix"]) return this.cache["neighbourMatrix"];
+        const matrix: Array<Array<boolean>> = [];
+        for (const v of this.vertices) {
+            matrix[v.id] = [];
+        }
+        for (const e of this.edges) {
+            matrix[e.a.id][e.b.id] = true;
+            matrix[e.b.id][e.a.id] = true;
+        }
+        if (this.finalized) this.cache["neighbourMatrix"] = matrix;
+        return matrix;
+    }
+
+    shortestPath(vertex1: Vertex, vertex2: Vertex, algorithm: ShortestPathAlgorithm): Path {
+        switch (algorithm) {
+            case "dijkstra-js": {
+                return this.dijkstra(vertex1, vertex2);
+            }
+            default:
+                throw new TypeError("Unknown shortest path algorithm.")
+        }
+    }
+    private dijkstra(vertex1: Vertex, vertex2: Vertex): Path {
+        const vertices: Array<DijsktraVertex> = [];
+        const neighbours = this.neighbourList;
+        const distances = this.distanceMatrix;
+        for (const v of this.vertices) {
+            const dv = new DijsktraVertex(v);
+            if (dv.id === vertex1.id) dv.distance = 0;
+            vertices[dv.id] = dv;
+        }
+        const unvisited = vertices.concat();
+        var current = vertices[vertex1.id];
+        while (unvisited.length != 0) {
+            let ns = neighbours[current.id].map(v => vertices[v]);
+            for (const unvis of ns) {
+                if (unvis.visited) continue;
+                const newL = current.distance + distances[current.id][unvis.id];
+                if (newL < unvis.distance) {
+                    unvis.distance = newL;
+                    unvis.prev = current;
+                }
+            }
+            current.visited = true;
+            for (var i = 0; i < unvisited.length; i++) {
+                unvisited.splice(i);
+            }
+            if (vertices[vertex2.id].visited) {
+                const end = vertices[vertex2.id];
+                const cost = end.distance;
+                const path: Array<Vertex> = [];
+                var c: DijsktraVertex = end;
+                while (c.id != vertex1.id) {
+                    const r = this.getVertex(c.id);
+                    if (!r) throw new ReferenceError("Error referencing to vertex ID after dijsktra algorithm.");
+                    path.unshift(r);
+                    if (!c.prev) throw new ReferenceError("Current vertex doesn't have a previous vertex.");
+                    c = c.prev;
+                }
+                path.unshift(c);
+                return new Path(this, path, cost);
+            }
+            var smallestD = Number.POSITIVE_INFINITY;
+            for (const v of unvisited) {
+                if (smallestD > v.distance) {
+                    smallestD = v.distance;
+                    current = v;
+                }
+            }
+        }
+        return new Path(this, [], Number.NEGATIVE_INFINITY);
+    }
 }
 export class Vertex implements VertexInterface {
     readonly name: string;
     readonly id: number;
-    constructor(name: string, id: number) {
+    readonly graph: UndirectedGraph;
+    readonly neighbours: Array<Vertex> = [];
+    constructor(graph: UndirectedGraph, name: string, id: number) {
         this.name = name;
         this.id = id;
+        this.graph = graph;
     }
 }
 export class Edge implements EdgeInterface {
     readonly a: Vertex;
     readonly b: Vertex;
-    readonly cost?: number;
-    constructor(a: Vertex, b: Vertex, cost?: number) {
+    readonly cost: number;
+    readonly graph: UndirectedGraph;
+    constructor(graph: UndirectedGraph, a: Vertex, b: Vertex, cost: number = 1) {
         this.a = a;
         this.b = b;
         this.cost = cost;
+        this.graph = graph;
+
     }
 }
+export class Path {
+    readonly graph: UndirectedGraph;
+    readonly vertices: Array<Vertex>;
+    readonly cost: number;
+    constructor(graph: UndirectedGraph, vertices: Array<Vertex>, cost: number) {
+        this.graph = graph;
+        this.vertices = vertices;
+        this.cost = cost;
+    }
+    get found() {
+        return this.cost !== Number.NEGATIVE_INFINITY || this.vertices.length !== 0;
+    }
+}
+class DijsktraVertex extends Vertex {
+    distance: number = Number.POSITIVE_INFINITY;
+    visited: boolean = false;
+    prev?: DijsktraVertex;
+    constructor(vertex: Vertex) {
+        super(vertex.graph, vertex.name, vertex.id);
+    }
+}
+
 interface VertexInterface {
     name: string;
 }
@@ -100,3 +242,6 @@ interface EdgeInterface {
     b: Vertex;
     cost?: number;
 }
+
+type DijkstraAlgoritm = "dijkstra" | "dijkstra-js"
+type ShortestPathAlgorithm = DijkstraAlgoritm;
