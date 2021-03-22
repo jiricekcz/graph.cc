@@ -128,7 +128,17 @@ export default class UndirectedGraph {
         return matrix;
     }
 
-    shortestPath(vertex1: Vertex, vertex2: Vertex, algorithm: ShortestPathAlgorithm): Path {
+    shortestPath(vertex1: Vertex | string, vertex2: Vertex | string, algorithm: ShortestPathAlgorithm): Path {
+        if (typeof vertex1 == "string") {
+            let v = this.getVertex(vertex1);
+            if (!v) throw new ReferenceError("Vertex not found!");
+            vertex1 = v;
+        }
+        if (typeof vertex2 == "string") {
+            let v = this.getVertex(vertex2);
+            if (!v) throw new ReferenceError("Vertex not found!");
+            vertex2 = v;
+        }
         switch (algorithm) {
             case "dijkstra-js": {
                 return this.dijkstra(vertex1, vertex2);
