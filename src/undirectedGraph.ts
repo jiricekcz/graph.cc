@@ -19,9 +19,11 @@ export default class UndirectedGraph {
     addVertex(val: string | Vertex): void {
         if (this.finalized) throw new Error("Cannot add vertex to a finalized graph.")
         if (typeof val === "string") {
-            this.saveVertex(new Vertex(this, val, this.vertices.length))
+            this.saveVertex(new Vertex(this, val, this.vertices.length));
+            return;
         } else if (typeof val === "object") {
-            this.saveVertex(val)
+            this.saveVertex(val);
+            return;
         }
         throw new TypeError("No mathing overload for vertex creation.");
     }
@@ -44,13 +46,16 @@ export default class UndirectedGraph {
             if (!v1 || !v2) throw new ReferenceError("Cannot create an edge from vertex that doesn't exist. Please check you have added the vertex before adding the edge.");
             const e = new Edge(this, v1, v2, val3);
             this.saveEdge(e);
+            return;
         } else if (!val2 && !val3 && typeof val1 === "object") {
             if (val1 instanceof Vertex) throw new TypeError("Cannot add a Vertex as an Edge.");
             this.saveEdge(val1);
+            return;
         } else if (typeof val1 == "object" && typeof val2 === "object") {
             if (val1 instanceof Edge) throw new TypeError("Cannot create Edge from an Edge.");
             const e = new Edge(this, val1, val2, val3);
             this.saveEdge(e);
+            return;
         }
         throw new TypeError("No mathing overload for edge creation.");
     }
