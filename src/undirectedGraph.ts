@@ -66,8 +66,8 @@ export default class UndirectedGraph {
             if (!v) return null;
             return v;
         } else if (typeof val == "number") {
-            const v = this.vertices[val - 1];
-            if (v.id == val) return v;
+            const v = this.vertices[val - 2];
+            if (v && v.id == val) return v;
             for (const v2 of this.vertices) if (v2.id == val) return v2;
             return null;
         }
@@ -175,7 +175,10 @@ export default class UndirectedGraph {
             }
             current.visited = true;
             for (var i = 0; i < unvisited.length; i++) {
-                unvisited.splice(i);
+                if (unvisited[i].visited) {
+                    unvisited.splice(i, 1);
+                    break;
+                }
             }
             if (vertices[vertex2.id].visited) {
                 const end = vertices[vertex2.id];
@@ -189,7 +192,9 @@ export default class UndirectedGraph {
                     if (!c.prev) throw new ReferenceError("Current vertex doesn't have a previous vertex.");
                     c = c.prev;
                 }
-                path.unshift(c);
+                const r = this.getVertex(c.id);
+                if (!r) throw new ReferenceError("Cannot find starting vertex.")
+                path.unshift(r);
                 return new Path(this, path, cost);
             }
             var smallestD = Number.POSITIVE_INFINITY;
