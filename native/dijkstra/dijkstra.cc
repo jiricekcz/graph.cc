@@ -25,15 +25,26 @@ namespace Algorithm {
         std::vector<unsigned int> path;
     };
 
-    Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix) {
+    Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix, unsigned int origin, unsigned int destination) {
         Path p = Path();
+        
+        std::vector<double> distances;
+        distances.reserve(neighbours.size());
+        
+        std::vector<bool> visited;
+        visited.reserve(neighbours.size());
+
+        std::vector<unsigned int> unvisited;
+
+        unsigned int current = origin;
+
         return p; 
     }
 
     void main(const FunctionCallbackInfo<Value>&args) {
         Isolate* isolate = args.GetIsolate();
-        if (args.Length() != 2) {
-            ThrowTypeError(isolate, "Incorrect number of arguments. Expected 2.");
+        if (args.Length() != 4) {
+            ThrowTypeError(isolate, "Incorrect number of arguments. Expected 4 (number[][], number[][], number, number).");
             return;
         }
         if (!args[0]->IsArray()) {
@@ -44,9 +55,19 @@ namespace Algorithm {
             ThrowTypeError(isolate, "Expected the second argument to be an Array.");
             return;
         }
-        
+        if (!args[2]->IsNumber()){
+            ThrowTypeError(isolate, "Expected the second argument to be a Number.");
+            return;
+        }
+        if (!args[2]->IsNumber()){
+            ThrowTypeError(isolate, "Expected the second argument to be a Number.");
+            return;
+        }
 
         Local<Context> context = isolate->GetCurrentContext();
+
+        Local<Number> origin = Local<Number>::Cast(args[2]);
+        Local<Number> destination = Local<Number>::Cast(args[3]);
 
         Local<Array> neighbourList = Local<Array>::Cast(args[0]);
         Local<Array> distanceMatrix = Local<Array>::Cast(args[1]);
@@ -54,7 +75,8 @@ namespace Algorithm {
         std::vector<std::vector<unsigned int>> list;
         std::vector<std::vector<double>> matrix;
 
-
+        unsigned int from = origin->Value();
+        unsigned int to = destination->Value();
         
         // creating the list
         unsigned int l = neighbourList->Length();
@@ -113,7 +135,7 @@ namespace Algorithm {
 
        
 
-        Path rtr = dijkstra(list, matrix);
+        Path rtr = dijkstra(list, matrix, from, to);
 
         Local<Object> rv = Object::New(isolate);
 
