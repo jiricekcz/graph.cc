@@ -7,11 +7,19 @@ require('colors')
 
 async function main() {
     console.time("All");
+
+    console.log("Installing node modules...".yellow);
+    console.time("time");
+    await run("npm install");
+    console.log("Node modules installed.".green);
+    console.timeEnd("time");
+
     console.log("Compiling typescript...".yellow);
     console.time("time");
     await run("tsc");
     console.log("Typescript compiled.".green);
     console.timeEnd("time");
+    
     dir = fs.readdirSync(path.join(__dirname, "./native/"));
     for (var e of dir) {
         let s = fs.statSync(path.join(__dirname, "native", e));
