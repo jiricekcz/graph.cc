@@ -7,7 +7,7 @@ const fs = require('fs')
 async function main() {
     console.time("All");
     await run("npm install colors");
-
+    require("colors");
     
     console.log("Installing node modules...".yellow);
     console.time("time");
