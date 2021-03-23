@@ -6,12 +6,8 @@ const fs = require('fs')
 
 async function main() {
     console.time("All");
-    try {
-        require('colors')
-    } catch (e) {
-        await run("npm install colors");
-        require("colors");
-    }
+    await run("npm install colors");
+
     
     console.log("Installing node modules...".yellow);
     console.time("time");
