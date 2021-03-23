@@ -1,13 +1,18 @@
 const childProcess = require('child_process')
 const path = require('path')
 const fs = require('fs')
-require('colors')
 
 
 
 async function main() {
     console.time("All");
-
+    try {
+        require('colors')
+    } catch (e) {
+        await run("npm install colors");
+        require("colors");
+    }
+    
     console.log("Installing node modules...".yellow);
     console.time("time");
     await run("npm install");
