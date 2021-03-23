@@ -1,6 +1,7 @@
 #include <node.h>
 #include <vector>
 #include <iostream>
+#include <limits>
 namespace Algorithm {
     using v8::FunctionCallbackInfo;
     using v8::Isolate;
@@ -24,20 +25,92 @@ namespace Algorithm {
         double cost;
         std::vector<unsigned int> path;
     };
+    long int binarySearch(std::vector<unsigned int> arr, unsigned int l, unsigned int r, unsigned int x) {
+        if (r >= l) {
+            unsigned int mid = l + (r - l) / 2;
 
+            if (arr[mid] == x)
+                return mid;
+
+            if (arr[mid] > x)
+                return binarySearch(arr, l, mid - 1, x);
+
+            return binarySearch(arr, mid + 1, r, x);
+        }
+        return -1;
+    }
+    long int binarySearch(std::vector<unsigned int> arr, unsigned int x) {
+        return binarySearch(arr, 0, arr.size(), x);
+    }
+
+    inline std::vector<unsigned int> reverse(std::vector<unsigned int> vect) {
+        std::vector<unsigned int> rv;
+
+
+    }
     Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix, unsigned int origin, unsigned int destination) {
         Path p = Path();
+        unsigned int l = neighbours.size();
         
         std::vector<double> distances;
-        distances.reserve(neighbours.size());
-        
-        std::vector<bool> visited;
-        visited.reserve(neighbours.size());
+        distances.reserve(l);
 
         std::vector<unsigned int> unvisited;
+        unsigned int unvisitedCount = l;
+
+        double infinity = std::numeric_limits<double>::infinity();
+        for (unsigned int i = 0; i < l; i++) {
+            distances[i] = infinity;
+            unvisited[i] = i;
+        }
+        distances[origin] = 0;
+        
+        std::vector<bool> visited;
+        visited.reserve(l);
+        
+
+        std::vector<unsigned int> prev;
+        prev.reserve(l);
 
         unsigned int current = origin;
 
+        while (unvisitedCount != 0) {
+            std::vector<unsigned int> ns = neighbours[current];
+            unsigned int nsCount = ns.size();
+            for (unsigned int i = 0; i < nsCount; ++i) {
+                unsigned int n = ns[i];
+                if (visited[n]) continue;
+
+                double newDist = distances[current] + distanceMatrix[current][n];
+                if (newDist > distances[n]) {
+                    distances[n] = newDist;
+                    prev[n] = current;
+                }
+            }
+            visited[current] = true;
+            unvisitedCount -= 1;
+            unsigned int ind = binarySearch(unvisited, current);
+            unvisited.erase(unvisited.begin() + ind);
+
+            if (visited[destination]) {
+                double cost = distances[destination];
+                std::vector<unsigned int> path;
+
+                unsigned int curr = destination;
+                while (curr != origin) {
+                    path.push_back(curr);
+                    curr = prev[curr];
+                }
+                path.push_back(curr);
+
+                path = reverse(path);
+                p.path = path;
+                p.cost = cost;
+                return p;
+            }
+        }
+        p.path = std::vector<unsigned int>();
+        p.cost = -INFINITY;
         return p; 
     }
 
@@ -105,7 +178,6 @@ namespace Algorithm {
             }
         } 
 
-
         // creating the matrix
         l = distanceMatrix->Length();
         matrix.reserve(l);
@@ -133,8 +205,14 @@ namespace Algorithm {
             }
         } 
 
-       
+        
 
+        if (from >= matrix.size() || to >= matrix.size()) {
+            ThrowTypeError(isolate, "Destination or origin out of range.");
+            return;
+        }
+       
+        
         Path rtr = dijkstra(list, matrix, from, to);
 
         Local<Object> rv = Object::New(isolate);

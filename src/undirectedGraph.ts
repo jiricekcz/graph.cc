@@ -1,3 +1,4 @@
+import dijkstraNative from "../native/dijkstra/module";
 export default class UndirectedGraph {
     readonly vertices: Array<Vertex> = [];
     readonly edges: Array<Edge> = [];
@@ -148,9 +149,22 @@ export default class UndirectedGraph {
             case "dijkstra-js": {
                 return this.dijkstra(vertex1, vertex2);
             }
+            case "dijkstra": {
+                return this.dijkstraNative(vertex1, vertex2);
+            }
             default:
-                throw new TypeError("Unknown shortest path algorithm.")
+                throw new TypeError("Unknown shortest path algorithm.");
         }
+    }
+    private dijkstraNative(vertex1: Vertex, vertex2: Vertex): Path {
+        const p = dijkstraNative.evaluate(this.neighbourList, this.distanceMatrix, vertex1.id, vertex2.id);
+        const ver: Array<Vertex> = [];
+        for (const v of p.path) {
+            const u = this.getVertex(v);
+            if (!u) throw new ReferenceError("Cannot find vertex returned by native algorithm.");
+            ver.push(u);
+        }
+        return new Path(this, ver, p.cost);
     }
     private dijkstra(vertex1: Vertex, vertex2: Vertex): Path {
         const vertices: Array<DijsktraVertex> = [];
