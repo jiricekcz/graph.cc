@@ -54,9 +54,11 @@ namespace Algorithm {
         std::vector<std::vector<unsigned int>> list;
         std::vector<std::vector<double>> matrix;
 
+
         
         // creating the list
         unsigned int l = neighbourList->Length();
+        list.reserve(l);
 
         for (unsigned int i = 0; i < l; ++i) {
             Local<Value> e = neighbourList->Get(context, i).ToLocalChecked();
@@ -65,10 +67,13 @@ namespace Algorithm {
                 return;
             }
             Local<Array> vals = Local<Array>::Cast(e);
+
             unsigned int m = vals->Length();
+            list[i].reserve(m);
+            
             for (unsigned int j = 0; j < m; ++j) {
                 Local<Value> v2 = vals->Get(context, j).ToLocalChecked();
-                if (!e->IsNumber()) {
+                if (!v2->IsNumber()) {
                     ThrowTypeError(isolate, "Expected the first argument to be of the type Array<Array<number>>.");
                     return;
                 }
@@ -81,6 +86,7 @@ namespace Algorithm {
 
         // creating the matrix
         l = distanceMatrix->Length();
+        matrix.reserve(l);
 
         for (unsigned int i = 0; i < l; ++i) {
             Local<Value> e = distanceMatrix->Get(context, i).ToLocalChecked();
@@ -89,10 +95,13 @@ namespace Algorithm {
                 return;
             }
             Local<Array> vals = Local<Array>::Cast(e);
+
             unsigned int m = vals->Length();
+            matrix[i].reserve(m);
+
             for (unsigned int j = 0; j < m; ++j) {
                 Local<Value> v2 = vals->Get(context, j).ToLocalChecked();
-                if (!e->IsNumber()) {
+                if (!v2->IsNumber()) {
                     ThrowTypeError(isolate, "Expected the second argument to be of the type Array<Array<number>>.");
                     return;
                 }
