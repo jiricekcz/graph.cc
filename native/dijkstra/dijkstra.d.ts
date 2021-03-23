@@ -1,0 +1,1 @@
+export function evaluate(neighbourList: Array<Array<number>>, distanceMatrix: Array<Array<number>>): { path: number[], cost: numebr };
