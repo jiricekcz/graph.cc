@@ -1,6 +1,7 @@
 #include <node.h>
 #include <vector>
-namespace dijkstra {
+#include <iostream>
+namespace Algorithm {
     using v8::FunctionCallbackInfo;
     using v8::Isolate;
     using v8::Local;
@@ -16,9 +17,19 @@ namespace dijkstra {
         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, txt).ToLocalChecked()));
     }
     struct Path {
+        Path() {
+            cost = 0;
+            path = std::vector<unsigned int>();
+        }
         double cost;
         std::vector<unsigned int> path;
     };
+
+    Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix) {
+        Path p = Path();
+        return p; 
+    }
+
     void main(const FunctionCallbackInfo<Value>&args) {
         Isolate* isolate = args.GetIsolate();
         if (args.Length() != 2) {
@@ -33,6 +44,8 @@ namespace dijkstra {
             ThrowTypeError(isolate, "Expected the second argument to be an Array.");
             return;
         }
+        
+
         Local<Context> context = isolate->GetCurrentContext();
 
         Local<Array> neighbourList = Local<Array>::Cast(args[0]);
@@ -89,10 +102,32 @@ namespace dijkstra {
             }
         } 
 
-    }
-    Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix) {
+       
+
+        Path rtr = dijkstra(list, matrix);
+
+        Local<Object> rv = Object::New(isolate);
+
+        Local<Number> cost = Number::New(isolate, rtr.cost);
+        Local<Array> path = Array::New(isolate);
         
+        l = rtr.path.size();
+
+        for (unsigned int i = 0; i < l; ++i) {
+            path->Set(context, i, Number::New(isolate, rtr.path[i]));
+        }
+
+        
+        
+        rv->Set(context, String::NewFromUtf8(isolate, "cost").ToLocalChecked(), cost);
+        
+        Local<String> pathString = String::NewFromUtf8(isolate, "path").ToLocalChecked();
+        rv->Set(context, pathString, path);
+        
+        args.GetReturnValue().Set(rv);
+        return;
     }
+    
     
     void Initilize(Local<Object> exports) {
         NODE_SET_METHOD(exports, "evaluate", main);
