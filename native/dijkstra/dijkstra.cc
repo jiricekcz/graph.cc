@@ -26,7 +26,8 @@ namespace Algorithm {
         std::vector<unsigned int> path;
     };
     long int binarySearch(std::vector<unsigned int> arr, unsigned int l, unsigned int r, unsigned int x) {
-        if (r >= l) {
+        if (arr[0] == x) return 0;
+        if (r >= l && x >= arr[l] && x <= arr[r]) {
             unsigned int mid = l + (r - l) / 2;
 
             if (arr[mid] == x)
@@ -40,23 +41,27 @@ namespace Algorithm {
         return -1;
     }
     long int binarySearch(std::vector<unsigned int> arr, unsigned int x) {
-        return binarySearch(arr, 0, arr.size(), x);
+        return binarySearch(arr, 0, arr.size() - 1, x);
     }
 
     inline std::vector<unsigned int> reverse(std::vector<unsigned int> vect) {
         std::vector<unsigned int> rv;
-
+        for (long int i = vect.size() - 1; i >= 0; --i) {
+            rv.push_back(vect[i]);
+        }
+        return rv;
 
     }
-    Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix, unsigned int origin, unsigned int destination) {
+    Path dijkstra(std::vector<std::vector<unsigned int>> neighbours, std::vector<std::vector<double>> distanceMatrix, unsigned int origin, unsigned int destination, Isolate* isolate) {
         Path p = Path();
         unsigned int l = neighbours.size();
         
         std::vector<double> distances;
-        distances.reserve(l);
+        distances.resize(l);
 
         std::vector<unsigned int> unvisited;
         unsigned int unvisitedCount = l;
+        unvisited.resize(l);
 
         double infinity = std::numeric_limits<double>::infinity();
         for (unsigned int i = 0; i < l; i++) {
@@ -66,14 +71,12 @@ namespace Algorithm {
         distances[origin] = 0;
         
         std::vector<bool> visited;
-        visited.reserve(l);
+        visited.resize(l);
         
 
         std::vector<unsigned int> prev;
-        prev.reserve(l);
-
+        prev.resize(l);
         unsigned int current = origin;
-
         while (unvisitedCount != 0) {
             std::vector<unsigned int> ns = neighbours[current];
             unsigned int nsCount = ns.size();
@@ -82,7 +85,7 @@ namespace Algorithm {
                 if (visited[n]) continue;
 
                 double newDist = distances[current] + distanceMatrix[current][n];
-                if (newDist > distances[n]) {
+                if (newDist < distances[n]) {
                     distances[n] = newDist;
                     prev[n] = current;
                 }
@@ -90,6 +93,12 @@ namespace Algorithm {
             visited[current] = true;
             unvisitedCount -= 1;
             unsigned int ind = binarySearch(unvisited, current);
+            if (ind == -1) {
+                ThrowTypeError(isolate, "Node not found.");
+                p.path = std::vector<unsigned int>();
+                p.cost = -INFINITY;
+                return p; 
+            }
             unvisited.erase(unvisited.begin() + ind);
 
             if (visited[destination]) {
@@ -110,7 +119,7 @@ namespace Algorithm {
             }
             double largeD = INFINITY;
             for (unsigned int i = 0; i < unvisitedCount; ++i) {
-                if (distances[unvisited[i]] < largeD) {
+                if (distances[unvisited[i]] <= largeD) {
                     largeD = distances[unvisited[i]];
                     current = unvisited[i];
                 }
@@ -160,7 +169,7 @@ namespace Algorithm {
         
         // creating the list
         unsigned int l = neighbourList->Length();
-        list.reserve(l);
+        list.resize(l);
 
         for (unsigned int i = 0; i < l; ++i) {
             Local<Value> e = neighbourList->Get(context, i).ToLocalChecked();
@@ -171,7 +180,7 @@ namespace Algorithm {
             Local<Array> vals = Local<Array>::Cast(e);
 
             unsigned int m = vals->Length();
-            list[i].reserve(m);
+            list[i].resize(m);
             
             for (unsigned int j = 0; j < m; ++j) {
                 Local<Value> v2 = vals->Get(context, j).ToLocalChecked();
@@ -187,7 +196,7 @@ namespace Algorithm {
 
         // creating the matrix
         l = distanceMatrix->Length();
-        matrix.reserve(l);
+        matrix.resize(l);
 
         for (unsigned int i = 0; i < l; ++i) {
             Local<Value> e = distanceMatrix->Get(context, i).ToLocalChecked();
@@ -198,11 +207,11 @@ namespace Algorithm {
             Local<Array> vals = Local<Array>::Cast(e);
 
             unsigned int m = vals->Length();
-            matrix[i].reserve(m);
+            matrix[i].resize(m);
 
             for (unsigned int j = 0; j < m; ++j) {
                 Local<Value> v2 = vals->Get(context, j).ToLocalChecked();
-                if (!v2->IsNumber()) {
+                if (!v2->IsNumber() && !v2->IsNullOrUndefined()) {
                     ThrowTypeError(isolate, "Expected the second argument to be of the type Array<Array<number>>.");
                     return;
                 }
@@ -220,8 +229,7 @@ namespace Algorithm {
         }
        
         
-        Path rtr = dijkstra(list, matrix, from, to);
-
+        Path rtr = dijkstra(list, matrix, from, to, isolate);
         Local<Object> rv = Object::New(isolate);
 
         Local<Number> cost = Number::New(isolate, rtr.cost);

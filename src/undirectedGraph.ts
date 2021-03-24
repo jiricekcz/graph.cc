@@ -22,12 +22,9 @@ export default class UndirectedGraph {
         for (const v of val) {
             if (typeof v === "string") {
                 this.saveVertex(new Vertex(this, v, this.vertices.length));
-                return;
             } else if (typeof v === "object") {
                 this.saveVertex(v);
-                return;
-            }
-            throw new TypeError("No mathing overload for vertex creation.");
+            } else throw new TypeError("No mathing overload for vertex creation.");
         }
     }
     private saveEdge(e: Edge): void {
@@ -234,6 +231,9 @@ export class Vertex implements VertexInterface {
         this.id = id;
         this.graph = graph;
     }
+    toString() {
+        return `${this.name}`;
+    }
 }
 export class Edge implements EdgeInterface {
     readonly a: Vertex;
@@ -259,6 +259,10 @@ export class Path {
     }
     get found() {
         return this.cost !== Number.NEGATIVE_INFINITY || this.vertices.length !== 0;
+    }
+    toString() {
+        if (!this.found) return `${this.vertices[0]} ≠> ${this.vertices[this.vertices.length]}`;
+        return this.vertices.join(" => ") + ` (${this.cost})`
     }
 }
 class DijsktraVertex extends Vertex {
