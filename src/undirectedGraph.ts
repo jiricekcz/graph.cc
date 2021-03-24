@@ -15,18 +15,20 @@ export default class UndirectedGraph {
         this.nameVertexMap.set(v.name, v);
         this.vertices.push(v);
     }
-    addVertex(vertex: Vertex): void;
-    addVertex(name: string): void;
-    addVertex(val: string | Vertex): void {
-        if (this.finalized) throw new Error("Cannot add vertex to a finalized graph.")
-        if (typeof val === "string") {
-            this.saveVertex(new Vertex(this, val, this.vertices.length));
-            return;
-        } else if (typeof val === "object") {
-            this.saveVertex(val);
-            return;
+    addVertex(...vertex: Vertex[]): void;
+    addVertex(...name: string[]): void;
+    addVertex(...val: (string | Vertex)[]): void {
+        if (this.finalized) throw new Error("Cannot add vertex to a finalized graph.");
+        for (const v of val) {
+            if (typeof v === "string") {
+                this.saveVertex(new Vertex(this, v, this.vertices.length));
+                return;
+            } else if (typeof v === "object") {
+                this.saveVertex(v);
+                return;
+            }
+            throw new TypeError("No mathing overload for vertex creation.");
         }
-        throw new TypeError("No mathing overload for vertex creation.");
     }
     private saveEdge(e: Edge): void {
         e.a.neighbours.push(e.b);
