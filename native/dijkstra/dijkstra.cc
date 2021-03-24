@@ -108,6 +108,13 @@ namespace Algorithm {
                 p.cost = cost;
                 return p;
             }
+            double largeD = INFINITY;
+            for (unsigned int i = 0; i < unvisited; ++i) {
+                if (distances[unvisited[i]] < largeD) {
+                    largeD = distances[unvisited[i]];
+                    current = unvisited[i];
+                }
+            }
         }
         p.path = std::vector<unsigned int>();
         p.cost = -INFINITY;
