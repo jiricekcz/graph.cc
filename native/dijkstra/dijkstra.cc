@@ -109,7 +109,7 @@ namespace Algorithm {
                 return p;
             }
             double largeD = INFINITY;
-            for (unsigned int i = 0; i < unvisited; ++i) {
+            for (unsigned int i = 0; i < unvisitedCount; ++i) {
                 if (distances[unvisited[i]] < largeD) {
                     largeD = distances[unvisited[i]];
                     current = unvisited[i];
